@@ -1,34 +1,33 @@
 import wikipedia
 import random
 
+
 def newquestion(celebrities, numclues):
+
     randnum = random.randint(0, len(celebrities) - 1)
     origname = celebrities[randnum]
     page = wikipedia.page(origname, auto_suggest=False)
     lines = page.content.split("\n")
 
-    clues = []
-    potentialclues = []
-    censorednames = []
-    for namepiece in origname.split(" "):
-        censorednames.append(namepiece)
-    j = -1
-    for namepiece in censorednames:
-        j += 1
-        if len(namepiece) <= 1: censorednames.pop(j)
-    i = -1
-    for line in lines:
-        i += 1
+    clues, potential_clues = [], []
+    censored_names = [name for name in origname.split() if len(name) > 1]
+
+    for i, line in enumerate(lines):
         line = line.replace("Dr. ", "Dr ").replace("Mr. ", "Mr ").replace("Gen. ", "Gen ").replace("No. ", "No ").replace("U.S. ", "US ")
         sentences = line.split(". ")
-        if "== Awards" in line or "== Legacy and awards" in line or "== Titles" in line or "== External" in line or "== Filmography" in line or "== Discography" in line\
-                or "== See also" in line or "== Electoral history" in line or "== Authored books" in line\
-                or "== References" in line:
+
+        matches = [
+            "== Awards", "== Legacy and awards", "== Titles",  "== External", "== Filmography",
+            "== Discography", "== See also", "== Electoral history", "== Authored books", "== References"
+        ]
+        if any(match in line for match in matches):
             break
+
         if "==" in sentences[0]: continue
         if sentences[0] == "": continue
-        if len(sentences[0]) <= 10 and len(sentences) > 1:
+        if 1 < len(sentences[0]) <= 10:
             sentences[0] += "." + sentences[1]
+
         if i == 0:
             if len(sentences[0]) <= 10:
                 sentences[0] += "." + sentences[1]
@@ -36,129 +35,120 @@ def newquestion(celebrities, numclues):
             name = name.split(" was ")[0]
             name = name.split(" (born")[0]
             for namepiece in name.split(" "):
-                censorednames.append(namepiece)
+                censored_names.append(namepiece)
             censoredline = sentences[0]
-            for word in censorednames:
-                censoredline = censoredline.replace(word, "XXX")
+            for word in censored_names:
+                censoredline = censoredline.replace(word, "____")
             line = censoredline + "."
             continue
-        j = -1
-        for namepiece in censorednames:
-            j += 1
-            if len(namepiece) <= 1: censorednames.pop(j)
 
+        censored_names = [name for name in censored_names if len(name) > 1]
         # censor celebrity's name
-
         censoredline = sentences[0]
-        for word in censorednames:
-            censoredline = censoredline.replace(word, "XXX")
+        for word in censored_names:
+            censoredline = censoredline.replace(word, "____")
         line = censoredline + "."
 
-        potentialclues.append(line)
+        potential_clues.append(line)
 
-    j = -1
-    for clue in potentialclues:
-        j += 1
+    for j, clue in enumerate(potential_clues):
         if len(clue) <= 7:
-            potentialclues.pop(j)
+            potential_clues.pop(j)
 
-    if len(potentialclues) < numclues:
+    if len(potential_clues) < numclues:
         return (-1, -1)
+
     for i in range(numclues):
-        randnum = random.randint(0, len(potentialclues) - 1)
-        clue = potentialclues[randnum]
-        potentialclues.pop(randnum)
+        randnum = random.randint(0, len(potential_clues) - 1)
+        clue = potential_clues[randnum]
+        potential_clues.pop(randnum)
         clues.append(clue)
 
-    i = 0
-    for clue in clues:
-        i += 1
-        print("Clue " + str(i) + ": " + clue)
-        print("")
+    for i, clue in enumerate(clues, start=1):
+        print(f"Clue {i}: {clue}\n")
 
     guess = input("Guess the celebrity: ")
-    answer = origname
-    return (guess, answer)
+    return guess, origname
+
 
 def playGame(celebrities):
-    numquestions = 12
-    numclues = 4
-    print("Welcome to Celebrity Trivia")
-    print("")
+
+    numquestions, numclues = 12, 4
+    print("Welcome to Celebrity Trivia\n")
     print(
-        "For each question, you will be given five facts about a celebrity that have been taken from wikipedia and guess the celebrity.")
-    print("")
+        "For each question, you will be given five facts about a celebrity that have been taken from wikipedia and guess the celebrity.\n")
     input("Press enter to play")
-    repeat = True
-    while repeat:
-        repeat = False
+
+    length = True
+    while length:
+        length = False
         print("Choose game length")
         print("1. Short (5 questions)")
         print("2. Medium (12 questions)")
         print("3. Long (20 questions)")
-        choice = int(input("Enter choice: (1, 2 or 3):"))
-        if choice not in [1, 2, 3]:
-            repeat = True
-        if choice == 1:
-            numquestions = 5
-        elif choice == 2:
-            numquestions = 12
-        else:
-            numquestions = 20
-    print("")
-    repeat = True
-    while repeat:
-        repeat = False
-        print("Choose game difficulty")
+        choice = int(input("Enter choice: (1, 2 or 3): "))
+
+        match choice:
+            case 1: numquestions = 5
+            case 2: numquestions = 12
+            case 3: numquestions = 20
+            case _: repeat = True
+
+    difficulty = True
+    while difficulty:
+        difficulty = False
+        print("\nChoose game difficulty")
         print("1. Easy (6 clues)")
         print("2. Medium (4 clues)")
         print("3. Hard (2 clues)")
         choice = int(input("Enter choice: (1, 2 or 3):"))
-        if choice not in [1, 2, 3]:
-            repeat = True
-        if choice == 1:
-            numclues = 6
-        elif choice == 2:
-            numclues = 4
-        else:
-            numclues = 2
-    print("")
-    print(str(numquestions) + " questions - " + str(numclues) + " clues")
-    print("")
-    x = input("Press enter to begin")
-    repeat = True
-    questionnum = 0
-    correctanswers = 0
-    while repeat:
+
+        match choice:
+            case 1: numclues = 6
+            case 2: numclues = 4
+            case 3: numclues = 2
+            case _: repeat = True
+
+    print(f"\n{numquestions} questions - {numclues} clues\n")
+    user_continues = input("Press enter to begin ")
+    questionnum, correctanswers = 0, 0
+
+    gameloop = True
+    while gameloop:
+
         questionnum += 1
-        print("Question " + str(questionnum))
+        print(f"Question {questionnum}")
+
         validquestion = False
         while not validquestion:
             validquestion = True
-            (guess, answer) = newquestion(celebrities, numclues)
+            guess, answer = newquestion(celebrities, numclues)
             if guess == -1 or answer == -1:
                 validquestion = False
+
         if guess.lower() == answer.lower():
             print("Correct!")
             correctanswers += 1
+
+        # For debugging
+        if guess.lower() == "debug":
+            print(f"Debugging. The celebrity is {answer}")
+            correctanswers += 1
+
         else:
-            print("Incorrect. The celebrity was " + answer)
+            print(f"Incorrect. The celebrity was {answer}")
+
         if questionnum == numquestions:
-            repeat = False
+            gameloop = False
             break
-        x = input("Press enter for next question.")
+
+        user_continue = input("Press enter for next question.")
+
     percentage = correctanswers * 100 / numquestions
-    print("You scored " + str(round(percentage,1)) + "% (" + str(correctanswers) + "/" + str(numquestions) + ")")
-    print("Thanks for playing.")
-    x = input("")
+    print(f"You scored {round(percentage, 1)} % ({correctanswers}/{numquestions})\nThanks for playing.")
 
 
-celebrities = []
-ff = open('celebs.txt','r')
-totlines = 0
-for line in ff.readlines():
-    totlines+=1
-    celebrities.append(line.split('\n')[0])
-ff.close()
+with open('celebs.txt', 'r') as ff:
+    celebrities = [line.split('\n')[0] for line in ff.readlines()]
 
 playGame(celebrities)
